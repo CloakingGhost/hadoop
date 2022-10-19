@@ -1,0 +1,206 @@
+HDFS 서드파티앱이 생겨남
+하둡이 처리할땐 다른 기능이 들어갈 틈없음
+리소드 매니징만 따로 관리하는 앱이 탄생함
+그것이 yarn
+
+하둡도 얀을 통해 컨트롤링
+App Mstr 은 요청당 하나씩 생성
+
+HDFS을 사용하고 싶을 때 요청을 적재적소에 리소스를 관리해준다
+노드끼리 통신을 위한 규약이 필요하다
+
+네임노드에 데이터를 담아주는 녀석이 세컨더리 네임노드
+1 하둡 테스트
+2 완전분산 모드
+3 가상분산모드 <- 우린 이렇게 한다
+-----시작
+구글에 protocol buffuer 2.5 링크 복사
+우분투 루트에서
+wget https://github.com/protocolbuffers/protobuf/releases/download/v2.5.0/protobuf-2.5.0.tar.gz
+
+유틸만 따로 모으기 위해
+sudo mv protobuf-2.5.0.tar.gz /usr/local  이동
+sudo tar zxvf protobuf-2.5.0
+sudo rm -rf protobuf-2.5.0.tar.gz
+
+sudo ./configure
+Makefile 생성
+ls -ltr 역순으로 타음 리스트확인
+sudo make
+sudo make install
+sudo ldconfig : 라이브러리을 로드하고 심볼링 링크를 만들어줌
+protoc --version
+
+<참고>https://itdexter.tistory.com/m/325
+
+------apache hadoop Download 3.2.4 - binary 링크 복사
+wget https://dlcdn.apache.org/hadoop/common/hadoop-3.2.4/hadoop-3.2.4.tar.gz
+tar zxvf hadoop-3.2.4.tar.gz / sudo 하지마
+rm -r hadoop-3.2.4.tar.gz
+sudo apt install openjdk-8-jdk  / 하이브에서는 11버전이 안됨
+java -version
+ehco $PATH 		/ :으로 구분
+which java 		/ 어떤 패스로 실행되는지 확인 
+
+---여기서 잠깐 PATH를 확인하자
+cd /usr/bin/
+ls -l java
+cd /etc/alternatives/
+ls -l java
+cd /usr/lib/jvm/java-8-openjdk-amd64/jre/bin
+ls -l java  		/ 얘가 본체
+
+which java
+dirname $(dirname $(readlink -f $(which java))) 
+
+----------------------
+.bashrc 시스템 처음 켤때 환경설정을 편집
+vi ../.bashrc
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+제일 아래에 작성 (o로 작성시작)
+echo $JAVA_HOME 		/ 안보이지~~?
+ . ~/.bashrc		/ restart같은 개념?  .=source
+echo $JAVA_HOME		/ 이젠 보이지~~
+
+----------------------------
+ssh를 사용하면 패스워드를 입력하는데
+이를 해결하기위해 노드를 위한 key를 만들어주자
+ssh-keygen -t rsa
+cd .ssh
+cat id_rsa.pub >> authorized_keys
+ssh localhost 		/ 비번 안치고 들어가지만 yes 해야함
+exit
+ssh localhost 		/ 그냥 들어가짐
+exit
+------이제 하둡을 설정하자 터미널 2개 열고 하자
+cd etc/hadoop/
+vi hadoop-env.sh
+/JAVA_HOME   찾기
+JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) 로 바꾸기
+export PATH=$PATH:$JAVA_HOME/bin
+export CLASS_PATH=.:$JAVA_HOME/lib/tools.jar  java8만 설정
+-- 프로세스정보를 저정할 위치를 만들자
+cd hadoop-3.2.4/
+mkdir pids
+cd pids/
+pwd
+/home/user1/hadoop-3.2.4/pids   <- 경로 복사
+/PID_DIR    찾기
+export HADOOP_PID_DIR=/home/user1/hadoop-3.2.4/pids
+저장
+-- 로그를 담을 저장위치를 만들자
+cd hadoop-3.2.4/
+mkdir logs
+export HADOOP_LOG_DIR=${HADOOP_HOME}/logs 로 만들자
+-- 세컨더리 노드의 이름을 localhost라 하자
+vi masters - localhost 작성 저장
+-- 데이터 노드들의 호스트네임을 적는 곳
+vi workers - localhost 있으면 됨
+
+-- core-site.xml 수정
+vi core-site.xml
+-----잠시 탭의 간격을 조절하자
+ vi .vimrc
+set cindent
+set tabstop=4
+set shiftwidth=4
+----- 다시 수정하자
+주석 다 지운다
+HDFS에서 파일 시스템을 아래의 url로 접속
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    <property>
+</configuration>
+하둡의 임시파일 저장소
+mkdir data/hadoop
+cd data/hadoop
+mkdir tmp
+cd tmp
+pwd
+/home/user1/data/hadoop/tmp <- 복사
+    <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/home/user1/data/hadoop/tmp</value>
+    </property>
+ configuration 안에 추가 작성
+저장
+-- hdfs-site.xml 수정
+복사본은 1개만 만들어라 원래는 3개
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+
+ mkdir name-secondary
+ cd name-secondary/
+pwd
+/home/user1/data/hadoop/name-secondary <-복사
+   <property>
+     <name>dfs.namenode.checkpoint.dir</name>
+        <value>/home/user1/data/hadoop/name-secondary</value>
+    </property>
+
+네임노드의 접근경로
+ <property>
+        <name>dfs.http.address</name>
+        <value>localhost:50070</value>
+    </property>
+세컨더리 네임노드의 접근경로
+ <property>
+        <name>dfs.secondary.http.address</name>
+        <value>localhost:50090</value>
+    </property>
+네임노드가 데이터를 저장할 위치
+<property>
+        <name>dfs.namenode.name.dir</name>
+        <value>/home/user1/data/hadoop/name-secondary</value>
+    </property>
+mkdir namenode
+cd namenode/
+pwd
+/home/user1/data/hadoop/namenode <- 복사
+mkdir datanode
+cd datanode/
+-- madred-site.xml 수정
+mapreduce를 누구에게 지정할것인가
+
+-- yarn-site.xml 수정
+mkdir yarn
+mkdir yarn/local
+cd yarn/local
+ pwd
+/home/user1/data/hadoop/yarn/local <- 복사
+
+리소스 매니저가 활동할 디렉토리 지정
+    <property>
+        <name>yarn.resourcemanager.fs.state-store.uri</name>
+        <value>/home/user1/data/hadoop/yarn/rmstore</value>
+    </property>
+리소스 매니저 기동 위치
+<property>
+        <name>yarn.web-proxy.address</name>
+        <value>0.0.0.0:8090</value>     0.0.0.0 나를 지정하는 모든 ip
+    </property>
+노드 매니저의 로그 저장 위치
+<property>
+        <name>yarn.nodemanager.log-dirs</name>
+        <value>/home/user1/data/hadoop/yarn/logs</value>
+    </property>
+------------------------ HADOOP_HOME 설정
+vi ~/.bashrc 
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+export PATH=$PATH:$JAVA_HOME/bin
+export CLASS_PATH=.:$JAVA_HOME/lib/tools.jar
+export HADOOP_HOME=/home/user1/hadoop-3.2.4
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+------------------------------끝
+-----------파일 내보내기
+scp ubuntu:~/hadoop-3.2.4/etc/hadoop/hadoop-env.sh .
+scp ubuntu:~/hadoop-3.2.4/etc/hadoop/*site.xml .
+-------- hdfs 포멧 최초 1회만 한다
+cd hadoop-3.2.4
+hdfs namenode -format
+successfully formatted. 보이면 성공

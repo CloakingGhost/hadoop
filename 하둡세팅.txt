@@ -1,0 +1,131 @@
+Big Data 수십TB~
+
+수집 => 가공 => 분석 => 시각화 
+		    => 등
+
+서버컴퓨터 100대 이상
+구글에서 데이터를 수집했으나 가공이 힘들었다
+GFS(Google File System)을 만듬 여러컴퓨터를 하나의 디스크처럼 동작하게 만듬
+ + Map Reduce 작업에 대해 논문을 발표
+
+이걸보고 한 프로그래머가 java로 만듬 이름은 아들이 좋아하는 코끼리 인형의 이름
+하둡이 세상에 나온다
+아파치 프로젝트로 누구나 사용할수 있게 되었다
+
+하둡 => 데이터 가공을 위해 탄생 / 데이터를 HDFS에 쌓아야함
+sudo shutdown -h now
+----------------------------------------------
+리눅스를 세팅하자
+램 8192MB 세팅
+용량 40GB
+
+sudo apt update
+sudo apt upgrade
+sudo apt install build-essential
+sudo apt install net-tools
+sudo apt install vim
+sudo apt install openssh-server
+sudo systemctl status ssh
+sudo vi /etc/ssh/sshd_config
+
+이제 vi 를 따라 해보자
+x : 지우기 delete
+Port 22
+PubkeyAuthentication yes
+PasswordAuthentication yes
+:wq
+sudo systemctl restart ssh
+sudo ufw allow ssh    (포트번호)/tcp  포트를 열어준다
+
+포트포워딩
+ifconfig (ip주소 확인)
+C:\ProgramData\VMware\vmnetnat.conf (메모장 or 노트패드로 열어 : 관리자 권한)
+[incomingtcp] 찾아
+# SSH
+#      ssh -p 8889 root@localhost
+#8889 = 192.168.72.129:22 
+에서
+
+# SSH
+#      ssh -p 8889 root@localhost
+2200 = 192.168.72.129:22    (가상머신 주소)
+으로 변경 후 저장해서 나간다
+
+내 로컬의 포트번호 2200으로 들어가면 vm가 신호를 받아 22포트로 연결해준다
+
+서비스 - VMware NAT Service(우클릭) - 다시시작
+
+Win cmd (구리니까 그만 알아보자)
+ssh user1@localhost -p 2200
+exit
+
+microsoft store - windows terminal install
+실행 후 아래 꺽새 - 설정 - json파일 열기
+"defaults": 
+        {
+            "colorScheme": "Duotone Dark",
+            "cursorShape": "underscore"
+        },
+저장
+https://windowsterminalthemes.dev/ 쉘 테마 변경
+
+이제 수업을 해보자
+C:\Users\BIT\.ssh\config 만들고 관리자권한 노트패드로 열어
+Host ubuntu
+	hostname localhost
+	User user1
+	Port 2200
+저장
+
+이제 부터 ssh user1@localhost -p 2200 대신 ssh ubuntu 로 들어간다
+드디어 vi 실습을 할수있다
+
+scp .\MainController.java ubuntu:~/work       / 시큐어카피 (파일선택)(옮겨질장소)
+
+sudo shutdown -h now  / vmWare 종료
+
+
+
+---------------------------------------
+**vi (백업파일을 만들어 놓고 해야한다)
+명령어 모드 
+ctrl+f or b  	/ 페이지 넘기기
+:1 		/ 1째 라인으로 가자
+:$ 		/ 맨뒤로 가자
+se nu 		/ set number
+se nonu
+ctrl+ G
+G 		/ 파일마지막 행으로
+:w 		/ 저장
+:q		/ 나가기
+:q!		/ 강제로 나가기
+
+편집모드
+i 		/ insert
+esc 		/ 명령어 모드로
+o 		/ 한줄 띄우고 편집모드로
+O 		/ 한줄 띄우고 윗줄로 이동
+a 		/ 다음칸으로 이동후 편집모드
+A		/ 해당 행 맨 뒤로 이동
+x 		/ 지우기
+7x 		/ 7개 지우기
+dd 		/ 라인 지우기 (잘라내기)
+p 		/ 붙혀넣기
+P 		/ 윗줄에 붙혀넣기
+2dd 		/ 2라인 지우기 (잘라내기)
+:.,$ d		/ (start number),(end number) 지우기
+u		/ undo
+ctrl + r		/ redo
+yy		/ 복사
+2yy		/ 2줄 복사
+r		/ 한글자 바꾸기
+R (+esc)		/ 여러글자 바꾸기 esc로 나가기
+cw 		/ 공백 특수문자를 기준으로 단어로 인식
+.		/ 바로 직전에 한것을 실행
+C + 입력		/ 현위치 부터 끝까지 삭제 후 입력
+/http		/ http를 검색
+n		/ 검색 중 다음단어
+N		/ 검색 중 이전단어
+:g/io\./s//ios\./g	/ io를 모두 ios로
+:g/java\.s///g	/ java를 다 지운다 
+shift + ~		/ 소문자 대문자
