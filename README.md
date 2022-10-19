@@ -1,6 +1,6 @@
 # hadoop
 
-- vi ~/.bashrc 제일아래에 추가
+- vi ~/.bashrc 제일아래에 추가  
 export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))  
 export PATH=$PATH:$JAVA_HOME/bin  
 export CLASS_PATH=.:$JAVA_HOME/lib/tools.jar  
