@@ -1,0 +1,83 @@
+ls hadoop-3.2.4/bin
+ls hadoop-3.2.4/sbin
+
+start-dfs.sh
+start-yarn.sh
+jps
+
+kill -9 (JobHistoryServer process number)
+stop-yarn.sh
+stop-dfs.sh
+jps
+
+문제가 생겼을 시
+cd hadoop-3.2.4/logs 로 가서 확인해라
+
+job history를 사용해 열어둔 터미널을 계속 사용할수있게 하자
+ mapred historyserver start&       / 뒤에 & BG 실행
+***주의 터미널을 그냥 닫으면 하둡이 죽어버림
+ : exit로 나간다 
+ : 리눅스와 윈도우의 연결을 끊을뿐 프로그램의 종료를 뜻하지 않는다
+------여기까지 2단계 테스트
+http://localhost:50070
+http://localhost:8088	/ 애플리케이션 정보
+http://localhost:19888	/ jobhistory
+
+hdfs dfs -			/ 하둡에서의 명령 시작어
+hdfs dfs -ls /		/ 하둡파일시트템의 root
+-- 하둡의 계정 위치 : 홈디렉토리의 계정 밑이 기본
+hdfs dfs -ls		
+/user/(이곳에 생김)		/ 리눅스 사용자 이름으로 폴더를 만들어아함
+hdfs dfs -put ~/work/story.txt sample-input	/로컬 시트템 파일를 hdfs로 옮기는 명령어
+hdfs dfs -get 
+
+메인메소드가 있는 클래스 이름 (소문자로만들어짐) 파일 아웃풋이름(미리 만들지마)
+yarn jar hadoop-3.2.4/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.4.jar wordcount sample-input sample-output
+
+hdfs dfs -ls sample-output
+hdfs dfs -cat sample-output/part-r-00000
+-- 하둡 데이터 처리 (05.MapReduce 참고)
+1. 데이터 입력
+2. 라인별로 split
+3. JAVA의 MAP으로 전달
+  Key : linenumder
+  value : text
+  공백기준으로 split
+4. 섞이면서 같은 단어끼리 모임
+ 한 박스당 128MB 초과시 박스 하나더 생성 / 박스를 파티션이라 부른다
+5. 중복 단어를 카운트 처리 (리듀스 작업)
+6. 결과 출력
+-------- 이제 위와같은 과정을 직접 만들어보자
+maven clean
+maven install
+
+cd E:\java_workspace\hadoop\hadoopMR\target
+ls
+scp .\hadoopMR-0.1.jar ubuntu:~/work/java
+hdfs dfs -ls
+yarn jar ./hadoopMR-0.1.jar com.adacho.driver.WordCount sample-input sample-output2
+
+hdfs dfs -rm -r sample-output2 파일 지울때
+-------
+scp ./airOT2012*.csv ubuntu:~/work/air-data    / wind ->ubuntu 파일 옮기기
+
+
+윈도우에서 우분투로 파일보낸다 scp
+파일 해더를 없앤다
+hdfs dfs -put 하둡으로 옮긴다
+자바 프로그램을 만든다
+우분투로 jar을 보낸다 scp
+yarn jar (jar위치) (패키지.driver.클래스 이름) (적용 폴더위치) (결과 폴더위치)
+**항상 현재 위치 확인
+
+
+
+임포트 잘못한거
+슈퍼넣은거
+오타
+사용자 정의 옵션을 사용하자( 명령어 중간에 들어가야함 )
+-----------------
+사용자 정의 옵션을 사용하자( 명령어 중간에 들어가야함 )
+
+yarn jar ./airPerformance-0.1.jar com.adacho.driver.DelayCount -D workType=arrival air-input arr-delay-count2
+
